@@ -5,12 +5,12 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.LinearLayout.HORIZONTAL
 import android.widget.RelativeLayout
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
@@ -38,13 +38,7 @@ class SpringDotsIndicator @JvmOverloads constructor(context: Context, attrs: Att
   private val strokeDotsLinearLayout: LinearLayout = LinearLayout(context)
 
   init {
-
-    val horizontalPadding = dpToPxF(24f)
     clipToPadding = false
-    setPadding(horizontalPadding.toInt(), 0, horizontalPadding.toInt(), 0)
-    strokeDotsLinearLayout.orientation = HORIZONTAL
-    addView(strokeDotsLinearLayout, ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT)
 
     dotsStrokeWidth = dpToPxF(2f) // 2dp
     dotIndicatorColor = context.getThemePrimaryColor()
@@ -66,9 +60,23 @@ class SpringDotsIndicator @JvmOverloads constructor(context: Context, attrs: Att
       dotsStrokeWidth = a.getDimension(R.styleable.SpringDotsIndicator_dotsStrokeWidth,
               dotsStrokeWidth)
 
+      // layout attributes
+      strokeDotsLinearLayout.orientation = a.getInt(R.styleable.SpringDotsIndicator_android_orientation, LinearLayout.HORIZONTAL)
+
       a.recycle()
+    } else {
+      strokeDotsLinearLayout.orientation = LinearLayout.HORIZONTAL
     }
 
+    val dp24 = dpToPxF(24f).toInt()
+    if (strokeDotsLinearLayout.orientation == LinearLayout.HORIZONTAL) {
+      setPadding(dp24, 0, dp24, 0)
+    } else {
+      setPadding(0, dp24, 0, dp24)
+    }
+
+    addView(strokeDotsLinearLayout, ViewGroup.LayoutParams.WRAP_CONTENT,
+      ViewGroup.LayoutParams.WRAP_CONTENT)
     dotIndicatorSize = dotsSize
 
     if (isInEditMode) {
@@ -90,7 +98,11 @@ class SpringDotsIndicator @JvmOverloads constructor(context: Context, attrs: Att
 
     dotIndicatorView = buildDot(false)
     addView(dotIndicatorView)
-    dotIndicatorSpring = SpringAnimation(dotIndicatorView, SpringAnimation.TRANSLATION_X)
+    val springTranslation = when(strokeDotsLinearLayout.orientation) {
+      LinearLayout.VERTICAL -> SpringAnimation.TRANSLATION_Y
+      else -> SpringAnimation.TRANSLATION_X
+    }
+    dotIndicatorSpring = SpringAnimation(dotIndicatorView, springTranslation)
     val springForce = SpringForce(0f)
     springForce.dampingRatio = dampingRatio
     springForce.stiffness = stiffness
@@ -111,10 +123,15 @@ class SpringDotsIndicator @JvmOverloads constructor(context: Context, attrs: Att
 
   private fun buildDot(stroke: Boolean): ViewGroup {
     val dot = LayoutInflater.from(context).inflate(R.layout.spring_dot_layout, this,
-            false) as ViewGroup
+            false) as RelativeLayout
     if (VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN_MR1) {
       dot.layoutDirection = View.LAYOUT_DIRECTION_LTR
     }
+
+//    dot.gravity = Gravity.RELATIVE_LAYOUT_DIRECTION or when (strokeDotsLinearLayout.orientation) {
+//      LinearLayout.VERTICAL -> Gravity.TOP or Gravity.START
+//      else -> Gravity.CENTER or Gravity.CENTER_VERTICAL
+//    }
 
     val dotView = dot.findViewById<ImageView>(R.id.spring_dot)
     dotView.setBackgroundResource(
@@ -124,7 +141,11 @@ class SpringDotsIndicator @JvmOverloads constructor(context: Context, attrs: Att
     params.width = params.height
     params.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE)
 
-    params.setMargins(dotsSpacing.toInt(), 0, dotsSpacing.toInt(), 0)
+    if (strokeDotsLinearLayout.orientation == LinearLayout.VERTICAL) {
+      params.setMargins(0, dotsSpacing.toInt(), 0, dotsSpacing.toInt())
+    } else {
+      params.setMargins(dotsSpacing.toInt(), 0, dotsSpacing.toInt(), 0)
+    }
 
     setUpDotBackground(stroke, dotView)
     return dot
@@ -157,8 +178,12 @@ class SpringDotsIndicator @JvmOverloads constructor(context: Context, attrs: Att
 
       override fun onPageScrolled(selectedPosition: Int, nextPosition: Int, positionOffset: Float) {
         val distance = dotsSize + dotsSpacing * 2
-        val x = (dots[selectedPosition].parent as ViewGroup).left
-        val globalPositionOffsetPixels = x + distance * positionOffset
+        val view = (dots[selectedPosition].parent as ViewGroup)
+        val itemOffset = when(strokeDotsLinearLayout.orientation) {
+          LinearLayout.VERTICAL -> view.top
+          else -> view.left
+        }
+        val globalPositionOffsetPixels = itemOffset + distance * positionOffset
         dotIndicatorSpring?.animateToFinalPosition(globalPositionOffsetPixels)
       }
 

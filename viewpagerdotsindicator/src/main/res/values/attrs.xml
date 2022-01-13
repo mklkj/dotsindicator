@@ -35,6 +35,7 @@
     <attr name="stiffness"/>
     <attr name="dampingRatio"/>
     <attr name="dotsClickable"/>
+    <attr name="android:orientation" />
   </declare-styleable>
 
   <declare-styleable name="WormDotsIndicator">

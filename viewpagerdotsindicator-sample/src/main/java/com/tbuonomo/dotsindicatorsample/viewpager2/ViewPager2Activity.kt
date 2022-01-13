@@ -22,6 +22,7 @@ class ViewPager2Activity : AppCompatActivity() {
 
     val dotsIndicator = findViewById<DotsIndicator>(R.id.dots_indicator)
     val springDotsIndicator = findViewById<SpringDotsIndicator>(R.id.spring_dots_indicator)
+    val sprintDotsIndicatorVertical = findViewById<SpringDotsIndicator>(R.id.spring_dots_indicator_vertical)
     val wormDotsIndicator = findViewById<WormDotsIndicator>(R.id.worm_dots_indicator)
 
     val viewPager2 = findViewById<ViewPager2>(R.id.view_pager2)
@@ -35,6 +36,7 @@ class ViewPager2Activity : AppCompatActivity() {
 
     dotsIndicator.setViewPager2(viewPager2)
     springDotsIndicator.setViewPager2(viewPager2)
+    sprintDotsIndicatorVertical.setViewPager2(viewPager2)
     wormDotsIndicator.setViewPager2(viewPager2)
   }
 }
